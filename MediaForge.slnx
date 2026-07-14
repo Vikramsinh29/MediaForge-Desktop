@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/MediaForge.Core/MediaForge.Core.csproj" />
     <Project Path="src/MediaForge/MediaForge.csproj" />
   </Folder>
 </Solution>
