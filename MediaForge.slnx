@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MediaForge/MediaForge.csproj" />
+  </Folder>
+</Solution>
