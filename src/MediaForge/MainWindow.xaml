@@ -1,24 +1,74 @@
 ﻿<Window x:Class="MediaForge.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{Binding Title}"
-        Width="1200"
-        Height="700"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MediaForge"
+        Height="650"
+        Width="1000"
         WindowStartupLocation="CenterScreen">
 
-    <DockPanel>
+    <DockPanel Margin="10">
 
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File"/>
-            <MenuItem Header="_Tools"/>
-            <MenuItem Header="_Help"/>
+            <MenuItem Header="_File">
+                <MenuItem Header="Open Media"
+                          Click="OpenMedia_Click"/>
+                <Separator/>
+                <MenuItem Header="Exit"
+                          Click="Exit_Click"/>
+            </MenuItem>
         </Menu>
 
         <StatusBar DockPanel.Dock="Bottom">
-            <TextBlock Text="{Binding Status}"/>
+            <TextBlock x:Name="StatusText"
+                       Text="Ready"/>
         </StatusBar>
 
-        <Grid/>
+        <Grid Margin="10">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Button Grid.Row="0"
+                    Width="150"
+                    Height="35"
+                    Content="Open Media"
+                    Click="OpenMedia_Click"/>
+
+            <GroupBox Grid.Row="2"
+                      Header="Selected File">
+
+                <StackPanel Margin="10">
+
+                    <TextBlock Text="File Name"/>
+
+                    <TextBox x:Name="FileNameBox"
+                             IsReadOnly="True"/>
+
+                    <TextBlock Margin="0,10,0,0"
+                               Text="Full Path"/>
+
+                    <TextBox x:Name="FilePathBox"
+                             IsReadOnly="True"/>
+
+                    <TextBlock Margin="0,10,0,0"
+                               Text="File Size"/>
+
+                    <TextBox x:Name="FileSizeBox"
+                             IsReadOnly="True"/>
+
+                </StackPanel>
+
+            </GroupBox>
+
+        </Grid>
 
     </DockPanel>
 
