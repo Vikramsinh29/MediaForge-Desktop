@@ -83,8 +83,12 @@
 </GroupBox>
 
             <Border Grid.Column="2"
-                    BorderThickness="2"
-                    BorderBrush="Gray">
+        BorderThickness="2"
+        BorderBrush="Gray"
+        AllowDrop="True"
+        DragEnter="DropZone_DragEnter"
+        DragOver="DropZone_DragOver"
+        Drop="DropZone_Drop">
 
                 <Grid>
                     <TextBlock

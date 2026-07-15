@@ -39,4 +39,11 @@ public partial class MainWindowViewModel : ObservableObject
         FileSize = $"{file.Size:N0} bytes";
         Status = "Media Loaded";
     }
+public void Load(MediaInfo info)
+{
+    FileName = info.FileName;
+    FullPath = info.FullPath;
+    FileSize = $"{info.FileSize:N0} bytes";
+    Status = "Media Loaded";
+}
 }
