@@ -25,6 +25,26 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string fileSize = string.Empty;
+    [ObservableProperty]
+private string container = string.Empty;
+
+[ObservableProperty]
+private string videoCodec = string.Empty;
+
+[ObservableProperty]
+private string audioCodec = string.Empty;
+
+[ObservableProperty]
+private string resolution = string.Empty;
+
+[ObservableProperty]
+private string duration = string.Empty;
+
+[ObservableProperty]
+private string fps = string.Empty;
+
+[ObservableProperty]
+private string bitrate = string.Empty;
 
     [RelayCommand]
     private void Open()
