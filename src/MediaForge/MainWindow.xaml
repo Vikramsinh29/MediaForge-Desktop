@@ -16,15 +16,17 @@
 
         <ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
-                <Button Content="Open"/>
+                <Button
+    Content="Open"
+    Command="{Binding OpenCommand}"/>
                 <Button Content="Convert"/>
                 <Button Content="Queue"/>
             </ToolBar>
         </ToolBarTray>
 
         <StatusBar DockPanel.Dock="Bottom">
-            <TextBlock Text="Ready"/>
-        </StatusBar>
+    <TextBlock Text="{Binding Status}"/>
+</StatusBar>
 
         <Grid Margin="10">
 
@@ -34,7 +36,51 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <GroupBox Header="File Information"/>
+            <GroupBox Header="File Information">
+
+    <Grid Margin="10">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="File"/>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding FileName}"/>
+
+        <TextBlock Grid.Row="1"
+                   Text="Path"/>
+
+        <TextBlock Grid.Row="1"
+           Grid.Column="1"
+           Text="{Binding FullPath}"
+           TextWrapping="Wrap"/>
+
+        <TextBlock Grid.Row="2"
+                   Text="Size"/>
+
+        <TextBlock Grid.Row="2"
+                   Grid.Column="1"
+                   Text="{Binding FileSize}"/>
+
+        <TextBlock Grid.Row="3"
+                   Text="Status"/>
+
+        <TextBlock Grid.Row="3"
+                   Grid.Column="1"
+                   Text="{Binding Status}"/>
+
+    </Grid>
+
+</GroupBox>
 
             <Border Grid.Column="2"
                     BorderThickness="2"
@@ -42,10 +88,11 @@
 
                 <Grid>
                     <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="22"
-                        Text="Drop Media Here"/>
+    HorizontalAlignment="Center"
+    VerticalAlignment="Center"
+    FontSize="22"
+    TextAlignment="Center"
+    Text="Drop Media Here&#10;&#10;or&#10;&#10;Click Open"/>
                 </Grid>
 
             </Border>

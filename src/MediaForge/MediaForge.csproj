@@ -13,7 +13,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MediaForge.Core\MediaForge.Core.csproj" />
+  <ProjectReference Include="..\MediaForge.Core\MediaForge.Core.csproj" />
+  <ProjectReference Include="..\MediaForge.Infrastructure\MediaForge.Infrastructure.csproj" />
+</ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\tools\ffmpeg\**\*">
+      <Link>tools\ffmpeg\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
