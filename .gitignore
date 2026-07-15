@@ -1,12 +1,22 @@
 .vs/
 bin/
 obj/
+
 *.user
 *.suo
+
 .idea/
 .vscode/
+
 TestResults/
+
 *.log
 logs/
+
 Thumbs.db
 Desktop.ini
+
+# FFmpeg binaries
+tools/ffmpeg/*.exe
+tools/ffmpeg/*.dll
+tools/ffmpeg/*.pdb
