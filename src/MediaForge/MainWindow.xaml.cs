@@ -1,6 +1,7 @@
-﻿using System.IO;
-using System.Windows;
+﻿using System.Windows;
+using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
+using MediaForge.Infrastructure.FFmpeg;
 using MediaForge.Services;
 using MediaForge.ViewModels;
 
@@ -9,13 +10,18 @@ namespace MediaForge;
 public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
+    private readonly IFFprobeService _ffprobeService;
 
     public MainWindow()
     {
         InitializeComponent();
 
+        var fileDialogService = new FileDialogService();
+        _ffprobeService = new FFprobeService();
+
         _viewModel = new MainWindowViewModel(
-            new FileDialogService());
+            fileDialogService,
+            _ffprobeService);
 
         DataContext = _viewModel;
     }
@@ -38,7 +44,7 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void DropZone_Drop(object sender, DragEventArgs e)
+    private async void DropZone_Drop(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop))
             return;
@@ -48,13 +54,18 @@ public partial class MainWindow : Window
         if (files.Length == 0)
             return;
 
-        var file = new FileInfo(files[0]);
-
-        _viewModel.Load(new MediaInfo
+        try
         {
-            FileName = file.Name,
-            FullPath = file.FullName,
-            FileSize = file.Length
-        });
+            MediaInfo info = await _ffprobeService.ReadAsync(files[0]);
+            _viewModel.Load(info);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                ex.Message,
+                "MediaForge",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 }

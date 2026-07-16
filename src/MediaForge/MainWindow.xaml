@@ -139,24 +139,26 @@
 
             <!-- Drop Zone -->
             <Border Grid.Column="2"
-                    BorderBrush="Gray"
-                    BorderThickness="2"
-                    AllowDrop="True"
-                    DragEnter="DropZone_DragEnter"
-                    DragOver="DropZone_DragOver"
-                    Drop="DropZone_Drop">
+        BorderBrush="Gray"
+        BorderThickness="2"
+        Background="Transparent">
 
-                <Grid>
+    <Grid Background="Transparent"
+          AllowDrop="True"
+          DragEnter="DropZone_DragEnter"
+          DragOver="DropZone_DragOver"
+          Drop="DropZone_Drop">
 
-                    <TextBlock HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               FontSize="22"
-                               TextAlignment="Center"
-                               Text="Drop Media Here&#10;&#10;or&#10;&#10;Click Open"/>
+        <TextBlock HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="22"
+                   TextAlignment="Center"
+                   IsHitTestVisible="False"
+                   Text="Drop Media Here&#10;&#10;or&#10;&#10;Click Open"/>
 
-                </Grid>
+    </Grid>
 
-            </Border>
+</Border>
 
         </Grid>
 

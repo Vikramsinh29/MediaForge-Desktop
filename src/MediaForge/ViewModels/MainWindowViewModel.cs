@@ -1,3 +1,4 @@
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MediaForge.Core.Interfaces;
@@ -8,10 +9,14 @@ namespace MediaForge.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IFileDialogService _fileDialogService;
+    private readonly IFFprobeService _ffprobeService;
 
-    public MainWindowViewModel(IFileDialogService fileDialogService)
+    public MainWindowViewModel(
+        IFileDialogService fileDialogService,
+        IFFprobeService ffprobeService)
     {
         _fileDialogService = fileDialogService;
+        _ffprobeService = ffprobeService;
     }
 
     [ObservableProperty]
@@ -48,17 +53,25 @@ public partial class MainWindowViewModel : ObservableObject
     private string bitrate = string.Empty;
 
     [RelayCommand]
-    private void Open()
+    private async Task Open()
     {
-        MediaFile? file = _fileDialogService.PickMediaFile();
+        try
+        {
+            MediaFile? file = _fileDialogService.PickMediaFile();
 
-        if (file is null)
-            return;
+            if (file is null)
+                return;
 
-        FileName = file.FileName;
-        FullPath = file.FullPath;
-        FileSize = $"{file.Size:N0} bytes";
-        Status = "Media Loaded";
+            MessageBox.Show(file.FullPath);
+
+            MediaInfo info = await _ffprobeService.ReadAsync(file.FullPath);
+
+            Load(info);
+        }
+        catch (Exception ex)
+{
+    Status = ex.Message;
+}
     }
 
     public void Load(MediaInfo info)
