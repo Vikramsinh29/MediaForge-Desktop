@@ -9,18 +9,7 @@ public sealed class FFprobeService : IFFprobeService
 {
     public async Task<MediaInfo> ReadAsync(string mediaFilePath)
     {
-        var ffprobePath = Path.Combine(
-            AppContext.BaseDirectory,
-            "tools",
-            "ffmpeg",
-            "ffprobe.exe");
-
-        if (!File.Exists(ffprobePath))
-        {
-            throw new FileNotFoundException(
-                "FFprobe executable was not found.",
-                ffprobePath);
-        }
+        var ffprobePath = FFmpegLocator.GetFFprobePath();
 
         var arguments =
             $"-v quiet -print_format json -show_format -show_streams \"{mediaFilePath}\"";

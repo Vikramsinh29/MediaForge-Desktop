@@ -1,4 +1,6 @@
-using System.Windows;
+using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MediaForge.Core.Interfaces;
@@ -8,16 +10,19 @@ namespace MediaForge.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private readonly IFileDialogService _fileDialogService;
-    private readonly IFFprobeService _ffprobeService;
+private readonly IFileDialogService _fileDialogService;
+private readonly IFFprobeService _ffprobeService;
+private readonly IThumbnailService _thumbnailService;
 
-    public MainWindowViewModel(
-        IFileDialogService fileDialogService,
-        IFFprobeService ffprobeService)
-    {
-        _fileDialogService = fileDialogService;
-        _ffprobeService = ffprobeService;
-    }
+public MainWindowViewModel(
+    IFileDialogService fileDialogService,
+    IFFprobeService ffprobeService,
+    IThumbnailService thumbnailService)
+{
+    _fileDialogService = fileDialogService;
+    _ffprobeService = ffprobeService;
+    _thumbnailService = thumbnailService;
+}
 
     [ObservableProperty]
     private string status = "Ready";
@@ -52,6 +57,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string bitrate = string.Empty;
 
+    [ObservableProperty]
+    private ImageSource? previewImage;
+
     [RelayCommand]
     private async Task Open()
     {
@@ -62,32 +70,75 @@ public partial class MainWindowViewModel : ObservableObject
             if (file is null)
                 return;
 
-            MessageBox.Show(file.FullPath);
-
             MediaInfo info = await _ffprobeService.ReadAsync(file.FullPath);
 
-            Load(info);
+            await LoadAsync(info);
         }
         catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+    }
+
+    public async Task LoadAsync(MediaInfo info)
 {
-    Status = ex.Message;
+    FileName = info.FileName;
+    FullPath = info.FullPath;
+    FileSize = $"{info.FileSize:N0} bytes";
+
+    Container = info.Container;
+    VideoCodec = info.VideoCodec;
+    AudioCodec = info.AudioCodec;
+    Resolution = info.Resolution;
+    Duration = info.Duration.ToString("F2");
+    Fps = info.FPS.ToString("F2");
+    Bitrate = info.Bitrate.ToString();
+
+    await LoadPreviewAsync(info.FullPath);
+
+    Status = "Media Loaded";
 }
-    }
+    
 
-    public void Load(MediaInfo info)
+ private async Task LoadPreviewAsync(string filePath)
+{
+    PreviewImage = null;
+
+    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+    // Image preview
+    if (extension is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif")
     {
-        FileName = info.FileName;
-        FullPath = info.FullPath;
-        FileSize = $"{info.FileSize:N0} bytes";
+        BitmapImage image = new();
 
-        Container = info.Container;
-        VideoCodec = info.VideoCodec;
-        AudioCodec = info.AudioCodec;
-        Resolution = info.Resolution;
-        Duration = info.Duration.ToString("F2");
-        Fps = info.FPS.ToString("F2");
-        Bitrate = info.Bitrate.ToString();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.UriSource = new Uri(filePath);
+        image.EndInit();
+        image.Freeze();
 
-        Status = "Media Loaded";
+        PreviewImage = image;
+        return;
     }
+
+    // Video preview
+    if (extension is ".mp4" or ".mkv" or ".avi" or ".mov"
+        or ".wmv" or ".webm" or ".flv" or ".m4v")
+    {
+        string? thumbnail = await _thumbnailService.CreateThumbnailAsync(filePath);
+
+        if (thumbnail is null)
+            return;
+
+        BitmapImage image = new();
+
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.UriSource = new Uri(thumbnail);
+        image.EndInit();
+        image.Freeze();
+
+        PreviewImage = image;
+    }
+}
 }

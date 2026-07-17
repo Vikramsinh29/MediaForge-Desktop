@@ -144,19 +144,24 @@
         Background="Transparent">
 
     <Grid Background="Transparent"
-          AllowDrop="True"
-          DragEnter="DropZone_DragEnter"
-          DragOver="DropZone_DragOver"
-          Drop="DropZone_Drop">
+      AllowDrop="True"
+      DragEnter="DropZone_DragEnter"
+      DragOver="DropZone_DragOver"
+      Drop="DropZone_Drop">
 
-        <TextBlock HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="22"
-                   TextAlignment="Center"
-                   IsHitTestVisible="False"
-                   Text="Drop Media Here&#10;&#10;or&#10;&#10;Click Open"/>
+    <Image Source="{Binding PreviewImage}"
+           Stretch="Uniform"
+           Margin="10"
+           IsHitTestVisible="False"/>
 
-    </Grid>
+    <TextBlock x:Name="DropMessage"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               FontSize="22"
+               TextAlignment="Center"
+               IsHitTestVisible="False"
+               Text="Drop Media Here&#10;&#10;or&#10;&#10;Click Open"/>
+</Grid>
 
 </Border>
 

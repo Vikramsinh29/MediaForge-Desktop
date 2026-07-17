@@ -18,14 +18,27 @@ public partial class MainWindow : Window
 
         var fileDialogService = new FileDialogService();
         _ffprobeService = new FFprobeService();
+        var thumbnailService = new ThumbnailService();
 
         _viewModel = new MainWindowViewModel(
-            fileDialogService,
-            _ffprobeService);
+    fileDialogService,
+    _ffprobeService,
+    thumbnailService);
 
         DataContext = _viewModel;
+        _viewModel.PropertyChanged += ViewModel_PropertyChanged;
     }
-
+private void ViewModel_PropertyChanged(object? sender,
+    System.ComponentModel.PropertyChangedEventArgs e)
+{
+    if (e.PropertyName == nameof(MainWindowViewModel.PreviewImage))
+    {
+        DropMessage.Visibility =
+            _viewModel.PreviewImage is null
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+    }
+}
     private void DropZone_DragEnter(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
@@ -57,7 +70,7 @@ public partial class MainWindow : Window
         try
         {
             MediaInfo info = await _ffprobeService.ReadAsync(files[0]);
-            _viewModel.Load(info);
+            await _viewModel.LoadAsync(info);
         }
         catch (Exception ex)
         {
