@@ -10,19 +10,24 @@ namespace MediaForge.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-private readonly IFileDialogService _fileDialogService;
-private readonly IFFprobeService _ffprobeService;
-private readonly IThumbnailService _thumbnailService;
+    private readonly IFileDialogService _fileDialogService;
+    private readonly IFFprobeService _ffprobeService;
+    private readonly IThumbnailService _thumbnailService;
+    private readonly IConversionService _conversionService;
 
-public MainWindowViewModel(
-    IFileDialogService fileDialogService,
-    IFFprobeService ffprobeService,
-    IThumbnailService thumbnailService)
-{
-    _fileDialogService = fileDialogService;
-    _ffprobeService = ffprobeService;
-    _thumbnailService = thumbnailService;
-}
+    private MediaInfo? _currentMediaInfo;
+
+    public MainWindowViewModel(
+        IFileDialogService fileDialogService,
+        IFFprobeService ffprobeService,
+        IThumbnailService thumbnailService,
+        IConversionService conversionService)
+    {
+        _fileDialogService = fileDialogService;
+        _ffprobeService = ffprobeService;
+        _thumbnailService = thumbnailService;
+        _conversionService = conversionService;
+    }
 
     [ObservableProperty]
     private string status = "Ready";
@@ -80,65 +85,119 @@ public MainWindowViewModel(
         }
     }
 
+    [RelayCommand]
+    private async Task Convert()
+    {
+        try
+        {
+            if (_currentMediaInfo is null)
+            {
+                Status = "Please open a media file first.";
+                return;
+            }
+
+            string extension = Path.GetExtension(_currentMediaInfo.FullPath);
+
+            string? outputPath = _fileDialogService.PickSaveFile(
+                Path.GetFileNameWithoutExtension(_currentMediaInfo.FileName),
+                extension,
+                $"{extension.ToUpperInvariant()} Files|*{extension}");
+
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                Status = "Conversion cancelled.";
+                return;
+            }
+
+            Status = "Converting...";
+
+            ConversionRequest request = new()
+            {
+                InputPath = _currentMediaInfo.FullPath,
+                OutputPath = outputPath,
+                OutputFormat = extension.TrimStart('.'),
+                OverwriteExisting = true
+            };
+
+            ConversionResult result =
+                await _conversionService.ConvertAsync(request);
+
+            if (result.Success)
+            {
+                Status = "Conversion completed.";
+            }
+            else
+            {
+                Status = result.ErrorMessage ?? "Conversion failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+    }
+
     public async Task LoadAsync(MediaInfo info)
-{
-    FileName = info.FileName;
-    FullPath = info.FullPath;
-    FileSize = $"{info.FileSize:N0} bytes";
-
-    Container = info.Container;
-    VideoCodec = info.VideoCodec;
-    AudioCodec = info.AudioCodec;
-    Resolution = info.Resolution;
-    Duration = info.Duration.ToString("F2");
-    Fps = info.FPS.ToString("F2");
-    Bitrate = info.Bitrate.ToString();
-
-    await LoadPreviewAsync(info.FullPath);
-
-    Status = "Media Loaded";
-}
-    
-
- private async Task LoadPreviewAsync(string filePath)
-{
-    PreviewImage = null;
-
-    string extension = Path.GetExtension(filePath).ToLowerInvariant();
-
-    // Image preview
-    if (extension is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif")
     {
-        BitmapImage image = new();
+        _currentMediaInfo = info;
 
-        image.BeginInit();
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.UriSource = new Uri(filePath);
-        image.EndInit();
-        image.Freeze();
+        FileName = info.FileName;
+        FullPath = info.FullPath;
+        FileSize = $"{info.FileSize:N0} bytes";
 
-        PreviewImage = image;
-        return;
+        Container = info.Container;
+        VideoCodec = info.VideoCodec;
+        AudioCodec = info.AudioCodec;
+        Resolution = info.Resolution;
+        Duration = info.Duration.ToString("F2");
+        Fps = info.FPS.ToString("F2");
+        Bitrate = info.Bitrate.ToString();
+
+        await LoadPreviewAsync(info.FullPath);
+
+        Status = "Media Loaded";
     }
 
-    // Video preview
-    if (extension is ".mp4" or ".mkv" or ".avi" or ".mov"
-        or ".wmv" or ".webm" or ".flv" or ".m4v")
+    private async Task LoadPreviewAsync(string filePath)
     {
-        string? thumbnail = await _thumbnailService.CreateThumbnailAsync(filePath);
+        PreviewImage = null;
 
-        if (thumbnail is null)
+        string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+        // Image preview
+        if (extension is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif")
+        {
+            BitmapImage image = new();
+
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = new Uri(filePath);
+            image.EndInit();
+            image.Freeze();
+
+            PreviewImage = image;
             return;
+        }
 
-        BitmapImage image = new();
+        // Video preview
+        if (extension is ".mp4" or ".mkv" or ".avi" or ".mov"
+            or ".wmv" or ".webm" or ".flv" or ".m4v")
+        {
+            string? thumbnail =
+                await _thumbnailService.CreateThumbnailAsync(filePath);
 
-        image.BeginInit();
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.UriSource = new Uri(thumbnail);
-        image.EndInit();
-        image.Freeze();
+            if (thumbnail is null)
+                return;
 
-        PreviewImage = image;
+            BitmapImage image = new();
+
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = new Uri(thumbnail);
+            image.EndInit();
+            image.Freeze();
+
+            PreviewImage = image;
+        }
     }
-}
 }

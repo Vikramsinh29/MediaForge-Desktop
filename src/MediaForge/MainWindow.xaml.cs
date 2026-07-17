@@ -16,29 +16,38 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var fileDialogService = new FileDialogService();
+        IFileDialogService fileDialogService = new FileDialogService();
+
         _ffprobeService = new FFprobeService();
-        var thumbnailService = new ThumbnailService();
+
+        IThumbnailService thumbnailService = new ThumbnailService();
+
+        IConversionService conversionService = new ConversionService();
 
         _viewModel = new MainWindowViewModel(
-    fileDialogService,
-    _ffprobeService,
-    thumbnailService);
+            fileDialogService,
+            _ffprobeService,
+            thumbnailService,
+            conversionService);
 
         DataContext = _viewModel;
+
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
     }
-private void ViewModel_PropertyChanged(object? sender,
-    System.ComponentModel.PropertyChangedEventArgs e)
-{
-    if (e.PropertyName == nameof(MainWindowViewModel.PreviewImage))
+
+    private void ViewModel_PropertyChanged(
+        object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e)
     {
-        DropMessage.Visibility =
-            _viewModel.PreviewImage is null
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+        if (e.PropertyName == nameof(MainWindowViewModel.PreviewImage))
+        {
+            DropMessage.Visibility =
+                _viewModel.PreviewImage is null
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
     }
-}
+
     private void DropZone_DragEnter(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
@@ -70,6 +79,7 @@ private void ViewModel_PropertyChanged(object? sender,
         try
         {
             MediaInfo info = await _ffprobeService.ReadAsync(files[0]);
+
             await _viewModel.LoadAsync(info);
         }
         catch (Exception ex)

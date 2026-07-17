@@ -27,4 +27,24 @@ public sealed class FileDialogService : IFileDialogService
             Size = file.Length
         };
     }
+
+    public string? PickSaveFile(
+        string suggestedFileName,
+        string defaultExtension,
+        string filter)
+    {
+        SaveFileDialog dialog = new()
+        {
+            Title = "Save Converted Media",
+            FileName = suggestedFileName,
+            DefaultExt = defaultExtension,
+            Filter = filter,
+            AddExtension = true,
+            OverwritePrompt = true
+        };
+
+        return dialog.ShowDialog() == true
+            ? dialog.FileName
+            : null;
+    }
 }
