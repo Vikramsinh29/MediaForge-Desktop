@@ -65,9 +65,15 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private ImageSource? previewImage;
 
+    [ObservableProperty]
+    private bool isConverting;
+
     [RelayCommand]
     private async Task Open()
     {
+        if (IsConverting)
+            return;
+
         try
         {
             MediaFile? file = _fileDialogService.PickMediaFile();
@@ -88,6 +94,9 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task Convert()
     {
+        if (IsConverting)
+            return;
+
         try
         {
             if (_currentMediaInfo is null)
@@ -109,6 +118,7 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            IsConverting = true;
             Status = "Converting...";
 
             ConversionRequest request = new()
@@ -122,18 +132,17 @@ public partial class MainWindowViewModel : ObservableObject
             ConversionResult result =
                 await _conversionService.ConvertAsync(request);
 
-            if (result.Success)
-            {
-                Status = "Conversion completed.";
-            }
-            else
-            {
-                Status = result.ErrorMessage ?? "Conversion failed.";
-            }
+            Status = result.Success
+                ? "Conversion completed."
+                : result.ErrorMessage ?? "Conversion failed.";
         }
         catch (Exception ex)
         {
             Status = ex.Message;
+        }
+        finally
+        {
+            IsConverting = false;
         }
     }
 

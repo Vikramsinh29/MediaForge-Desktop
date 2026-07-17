@@ -15,14 +15,20 @@
             <MenuItem Header="_Help"/>
         </Menu>
 
-        <!-- Toolbar -->
         <ToolBarTray DockPanel.Dock="Top">
-            <ToolBar>
-                <Button Content="Open"
-                        Command="{Binding OpenCommand}" />
-                <Button Content="Convert"/>
-                <Button Content="Queue"/>
-            </ToolBar>
+        <ToolBar>
+
+        <Button Content="Open"
+                Command="{Binding OpenCommand}"
+                IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}" />
+
+        <Button Content="Convert"
+                Command="{Binding ConvertCommand}"
+                IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}" />
+
+        <Button Content="Queue"/>
+
+        </ToolBar>
         </ToolBarTray>
 
         <!-- Status -->

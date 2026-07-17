@@ -1,4 +1,6 @@
+using System.IO;
 using System.Diagnostics;
+using System.Text;
 using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
 
@@ -12,58 +14,71 @@ public sealed class ConversionService : IConversionService
         CancellationToken cancellationToken = default)
     {
         string ffmpegPath = FFmpegLocator.GetFFmpegPath();
+        string arguments = FFmpegCommandBuilder.Build(request);
+       
 
         ProcessStartInfo startInfo = new()
         {
             FileName = ffmpegPath,
-            Arguments = FFmpegCommandBuilder.Build(request),
-            RedirectStandardError = true,
+            Arguments = arguments,
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        using Process? process = Process.Start(startInfo);
-
-        if (process is null)
+        using Process process = new()
         {
-            return new ConversionResult
-            {
-                Success = false,
-                ExitCode = -1,
-                ErrorMessage = "Unable to start FFmpeg."
-            };
-        }
+            StartInfo = startInfo,
+            EnableRaisingEvents = true
+        };
 
-        cancellationToken.Register(() =>
+        StringBuilder stdout = new();
+        StringBuilder stderr = new();
+
+        process.OutputDataReceived += (_, e) =>
         {
-            try
-            {
-                if (!process.HasExited)
-                    process.Kill(true);
-            }
-            catch
-            {
-            }
-        });
+            if (e.Data != null)
+                stdout.AppendLine(e.Data);
+        };
 
-        string output = await process.StandardOutput.ReadToEndAsync();
-        string error = await process.StandardError.ReadToEndAsync();
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+                stderr.AppendLine(e.Data);
+        };
+
+        process.Start();
+
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        using CancellationTokenRegistration registration =
+            cancellationToken.Register(() =>
+            {
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(true);
+                }
+                catch
+                {
+                }
+        });;
 
         await process.WaitForExitAsync(cancellationToken);
+        
 
         bool success =
             process.ExitCode == 0 &&
             File.Exists(request.OutputPath);
-
-        progress?.Report(success ? 100 : 0);
 
         return new ConversionResult
         {
             Success = success,
             ExitCode = process.ExitCode,
             OutputFile = success ? request.OutputPath : null,
-            ErrorMessage = success ? null : error
+            ErrorMessage = success ? null : stderr.ToString()
         };
     }
 }
