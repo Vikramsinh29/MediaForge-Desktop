@@ -80,6 +80,27 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private OutputFormat? selectedOutputFormat;
+    partial void OnSelectedOutputFormatChanged(OutputFormat? value)
+    {
+        if (SelectedQueueItem is null || value is null)
+            return;
+
+        SelectedQueueItem.OutputFormat = value;
+    }
+
+    [ObservableProperty]
+    private ObservableCollection<ConversionJobViewModel> conversionQueue = [];
+
+    [ObservableProperty]
+    private ConversionJobViewModel? selectedQueueItem;
+
+    partial void OnSelectedQueueItemChanged(ConversionJobViewModel? value)
+    {
+        if (value is null)
+            return;
+
+        _ = LoadAsync(value.Media);
+    }
     
 
     [RelayCommand]
@@ -90,14 +111,30 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            MediaFile? file = _fileDialogService.PickMediaFile();
+           IReadOnlyList<MediaFile> files = _fileDialogService.PickMediaFiles();
 
-            if (file is null)
+            if (files.Count == 0)
                 return;
 
-            MediaInfo info = await _ffprobeService.ReadAsync(file.FullPath);
+            ConversionQueue.Clear();
 
-            await LoadAsync(info);
+            foreach (MediaFile file in files)
+            {
+                MediaInfo info = await _ffprobeService.ReadAsync(file.FullPath);
+
+                OutputFormat? defaultFormat =
+                    GetDefaultOutputFormat(Path.GetExtension(info.FullPath));
+
+                ConversionQueue.Add(new ConversionJobViewModel
+                {
+                    Media = info,
+                    OutputFormat = defaultFormat,
+                    Status = JobStatus.Pending,
+                    Progress = 0
+                });
+            }
+
+            SelectedQueueItem = ConversionQueue.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -188,8 +225,76 @@ string? outputPath = _fileDialogService.PickSaveFile(
             IsConverting = false;
         }
     }
+    [RelayCommand]
+    private void RemoveSelected()
+    {
+        if (SelectedQueueItem is null)
+            return;
 
-    public async Task LoadAsync(MediaInfo info)
+        int index = ConversionQueue.IndexOf(SelectedQueueItem);
+
+        ConversionQueue.Remove(SelectedQueueItem);
+
+        if (ConversionQueue.Count == 0)
+        {
+            SelectedQueueItem = null;
+
+            _currentMediaInfo = null;
+
+            PreviewImage = null;
+
+            FileName = string.Empty;
+            FullPath = string.Empty;
+            FileSize = string.Empty;
+            Container = string.Empty;
+            VideoCodec = string.Empty;
+            AudioCodec = string.Empty;
+            Resolution = string.Empty;
+            Duration = string.Empty;
+            Fps = string.Empty;
+            Bitrate = string.Empty;
+
+            AvailableOutputFormats.Clear();
+            SelectedOutputFormat = null;
+
+            Status = "Queue empty.";
+
+            return;
+        }
+
+        if (index >= ConversionQueue.Count)
+            index = ConversionQueue.Count - 1;
+
+        SelectedQueueItem = ConversionQueue[index];
+    }
+
+    [RelayCommand]
+    private void ClearQueue()
+    {
+        ConversionQueue.Clear();
+
+        SelectedQueueItem = null;
+
+        _currentMediaInfo = null;
+
+        PreviewImage = null;
+
+        FileName = string.Empty;
+        FullPath = string.Empty;
+        FileSize = string.Empty;
+        Container = string.Empty;
+        VideoCodec = string.Empty;
+        AudioCodec = string.Empty;
+        Resolution = string.Empty;
+        Duration = string.Empty;
+        Fps = string.Empty;
+        Bitrate = string.Empty;
+
+        AvailableOutputFormats.Clear();
+        SelectedOutputFormat = null;
+
+        Status = "Queue cleared.";
+    }    public async Task LoadAsync(MediaInfo info)
     {
         _currentMediaInfo = info;
 
@@ -251,51 +356,79 @@ else if (isImage)
     }
 }
 
-SelectedOutputFormat = AvailableOutputFormats.FirstOrDefault();
+    SelectedOutputFormat = SelectedQueueItem?.OutputFormat
+                       ?? AvailableOutputFormats.FirstOrDefault();
 
-        Status = "Media Loaded";
+    Status = "Media Loaded";
     }
 
     private async Task LoadPreviewAsync(string filePath)
+{
+    PreviewImage = null;
+
+    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+    // Image preview
+    if (extension is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif")
     {
-        PreviewImage = null;
+        BitmapImage image = new();
 
-        string extension = Path.GetExtension(filePath).ToLowerInvariant();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.UriSource = new Uri(filePath);
+        image.EndInit();
+        image.Freeze();
 
-        // Image preview
-        if (extension is ".jpg" or ".jpeg" or ".png" or ".bmp" or ".gif")
-        {
-            BitmapImage image = new();
-
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = new Uri(filePath);
-            image.EndInit();
-            image.Freeze();
-
-            PreviewImage = image;
-            return;
-        }
-
-        // Video preview
-        if (extension is ".mp4" or ".mkv" or ".avi" or ".mov"
-            or ".wmv" or ".webm" or ".flv" or ".m4v")
-        {
-            string? thumbnail =
-                await _thumbnailService.CreateThumbnailAsync(filePath);
-
-            if (thumbnail is null)
-                return;
-
-            BitmapImage image = new();
-
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = new Uri(thumbnail);
-            image.EndInit();
-            image.Freeze();
-
-            PreviewImage = image;
-        }
+        PreviewImage = image;
+        return;
     }
+
+    // Video preview
+    if (extension is ".mp4" or ".mkv" or ".avi" or ".mov"
+        or ".wmv" or ".webm" or ".flv" or ".m4v")
+    {
+        string? thumbnail =
+            await _thumbnailService.CreateThumbnailAsync(filePath);
+
+        if (thumbnail is null)
+            return;
+
+        BitmapImage image = new();
+
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.UriSource = new Uri(thumbnail);
+        image.EndInit();
+        image.Freeze();
+
+        PreviewImage = image;
+    }
+}
+private static bool IsVideo(string extension) =>
+    extension is ".mp4" or ".mkv" or ".avi" or ".mov"
+    or ".webm" or ".wmv" or ".flv" or ".m4v";
+
+private static bool IsAudio(string extension) =>
+    extension is ".mp3" or ".wav" or ".flac" or ".aac"
+    or ".ogg" or ".m4a" or ".wma";
+
+private static bool IsImage(string extension) =>
+    extension is ".jpg" or ".jpeg" or ".png"
+    or ".bmp" or ".webp" or ".tiff" or ".tif";
+
+private static OutputFormat? GetDefaultOutputFormat(string extension)
+{
+    extension = extension.ToLowerInvariant();
+
+    if (IsVideo(extension))
+        return OutputFormat.DefaultFormats.FirstOrDefault(f => f.Name == "MP4");
+
+    if (IsAudio(extension))
+        return OutputFormat.DefaultFormats.FirstOrDefault(f => f.Name == "MP3");
+
+    if (IsImage(extension))
+        return OutputFormat.DefaultFormats.FirstOrDefault(f => f.Name == "JPG");
+
+    return null;
+}
 }

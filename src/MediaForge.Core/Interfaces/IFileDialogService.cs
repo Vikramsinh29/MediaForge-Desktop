@@ -6,6 +6,8 @@ public interface IFileDialogService
 {
     MediaFile? PickMediaFile();
 
+    IReadOnlyList<MediaFile> PickMediaFiles();
+
     string? PickSaveFile(
         string suggestedFileName,
         string defaultExtension,

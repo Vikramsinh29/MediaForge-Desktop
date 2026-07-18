@@ -27,7 +27,34 @@ public sealed class FileDialogService : IFileDialogService
             Size = file.Length
         };
     }
+    public IReadOnlyList<MediaFile> PickMediaFiles()
+{
+    OpenFileDialog dialog = new()
+    {
+        Title = "Open Media",
+        Multiselect = true,
+        Filter = "Media Files|*.mp4;*.mkv;*.avi;*.mov;*.mp3;*.wav;*.flac;*.aac|All Files|*.*"
+    };
 
+    if (dialog.ShowDialog() != true)
+        return [];
+
+    List<MediaFile> files = [];
+
+    foreach (string fileName in dialog.FileNames)
+    {
+        FileInfo file = new(fileName);
+
+        files.Add(new MediaFile
+        {
+            FileName = file.Name,
+            FullPath = file.FullName,
+            Size = file.Length
+        });
+    }
+
+    return files;
+}
     public string? PickSaveFile(
         string suggestedFileName,
         string defaultExtension,

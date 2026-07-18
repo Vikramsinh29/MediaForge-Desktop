@@ -26,7 +26,13 @@
                 Command="{Binding ConvertCommand}"
                 IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}" />
 
-        <Button Content="Queue"/>
+        <Button Content="Convert All"/>
+
+        <Button Content="Remove"
+                Command="{Binding RemoveSelectedCommand}" />
+
+        <Button Content="Clear Queue"
+                Command="{Binding ClearQueueCommand}" />
 
         </ToolBar>
         </ToolBarTray>
@@ -37,7 +43,13 @@
         </StatusBar>
 
         <!-- Main Content -->
-        <Grid Margin="10">
+        <!-- Main Content -->
+            <Grid Margin="10">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="220"/>
+                </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="340"/>
@@ -199,6 +211,44 @@
 </Grid>
 
 </Border>
+            <GroupBox Grid.Row="1"
+                    Grid.ColumnSpan="3"
+                    Margin="0,10,0,0"
+                    Header="Conversion Queue">
+
+                <DataGrid ItemsSource="{Binding ConversionQueue}"
+                        SelectedItem="{Binding SelectedQueueItem}"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        IsReadOnly="True">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn
+                            Header="File"
+                            Binding="{Binding Media.FileName}"
+                            Width="*" />
+
+                        <DataGridTextColumn
+                            Header="Output"
+                            Binding="{Binding OutputFormat.Name}"
+                            Width="120"/>
+
+                        <DataGridTextColumn
+                            Header="Status"
+                            Binding="{Binding Status}"
+                            Width="120"/>
+
+                        <DataGridTextColumn
+                            Header="Progress"
+                            Binding="{Binding Progress}"
+                            Width="90"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+            </GroupBox>
 
         </Grid>
 
