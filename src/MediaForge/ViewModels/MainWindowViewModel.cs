@@ -105,12 +105,12 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            string extension = Path.GetExtension(_currentMediaInfo.FullPath);
+            const string extension = ".mp3";
 
             string? outputPath = _fileDialogService.PickSaveFile(
                 Path.GetFileNameWithoutExtension(_currentMediaInfo.FileName),
-                extension,
-                $"{extension.ToUpperInvariant()} Files|*{extension}");
+                ".mp3",
+                "MP3 Files|*.mp3");
 
             if (string.IsNullOrWhiteSpace(outputPath))
             {
@@ -125,7 +125,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 InputPath = _currentMediaInfo.FullPath,
                 OutputPath = outputPath,
-                OutputFormat = extension.TrimStart('.'),
+                OutputFormat = "mp3",
                 OverwriteExisting = true
             };
 

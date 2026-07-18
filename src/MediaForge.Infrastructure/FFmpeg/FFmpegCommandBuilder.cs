@@ -16,6 +16,15 @@ internal static class FFmpegCommandBuilder
 
         string overwrite = request.OverwriteExisting ? "-y" : "-n";
 
+        // Sprint 7.1
+        // First real media conversion: MP4 -> MP3
+        if (request.OutputFormat.Equals("mp3", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                $"{overwrite} -i \"{request.InputPath}\" -vn -c:a libmp3lame -b:a 320k \"{request.OutputPath}\"";
+        }
+
+        // Existing behaviour
         return
             $"{overwrite} -i \"{request.InputPath}\" \"{request.OutputPath}\"";
     }
