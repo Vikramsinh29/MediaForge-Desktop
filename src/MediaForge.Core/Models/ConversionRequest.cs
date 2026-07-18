@@ -9,4 +9,6 @@ public sealed class ConversionRequest
     public string OutputFormat { get; set; } = string.Empty;
 
     public bool OverwriteExisting { get; set; }
+
+    public TimeSpan Duration { get; set; }
 }

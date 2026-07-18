@@ -69,6 +69,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isConverting;
+    [ObservableProperty]
+    private double progress;
+
+    [ObservableProperty]
+    private string progressText = "0%";
 
     [ObservableProperty]
     private ObservableCollection<OutputFormat> availableOutputFormats = [];
@@ -136,20 +141,43 @@ string? outputPath = _fileDialogService.PickSaveFile(
             IsConverting = true;
             Status = "Converting...";
 
+            Progress = 0;
+            ProgressText = "0%";
+
             ConversionRequest request = new()
             {
                 InputPath = _currentMediaInfo.FullPath,
                 OutputPath = outputPath,
                 OutputFormat = SelectedOutputFormat.Extension.TrimStart('.'),
-                OverwriteExisting = true
+                OverwriteExisting = true,
+                Duration = TimeSpan.FromSeconds(_currentMediaInfo.Duration)
             };
 
-            ConversionResult result =
-                await _conversionService.ConvertAsync(request);
+            IProgress<double> conversionProgress = new Progress<double>(value =>
+            {
+                Progress = value;
+                ProgressText = $"{value:F0}%";
 
-            Status = result.Success
-                ? "Conversion completed."
-                : result.ErrorMessage ?? "Conversion failed.";
+                File.AppendAllText(
+                    Path.Combine(AppContext.BaseDirectory, "ui-progress.log"),
+                    $"{DateTime.Now:HH:mm:ss.fff}  {value:F2}%{Environment.NewLine}");
+            });
+
+            ConversionResult result =
+                await _conversionService.ConvertAsync(
+                    request,
+                    conversionProgress);
+
+            if (result.Success)
+            {
+                Progress = 100;
+                ProgressText = "100%";
+                Status = "Conversion completed.";
+            }
+            else
+            {
+                Status = result.ErrorMessage ?? "Conversion failed.";
+            }
         }
         catch (Exception ex)
         {
@@ -181,13 +209,49 @@ string? outputPath = _fileDialogService.PickSaveFile(
 
         AvailableOutputFormats.Clear();
 
-        AvailableOutputFormats.Add(
-            OutputFormat.DefaultFormats.First(f => f.Name == "MP4"));
+string extension = Path.GetExtension(info.FullPath).ToLowerInvariant();
 
-        AvailableOutputFormats.Add(
-            OutputFormat.DefaultFormats.First(f => f.Name == "MP3"));
+bool isVideo = extension is
+    ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".wmv" or ".flv" or ".m4v";
 
-        SelectedOutputFormat = AvailableOutputFormats.First();
+bool isAudio = extension is
+    ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" or ".m4a" or ".wma";
+
+bool isImage = extension is
+    ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp" or ".tiff" or ".tif";
+
+if (isVideo)
+{
+    foreach (OutputFormat format in OutputFormat.DefaultFormats)
+    {
+        if (format.Name is "MP4" or "MKV" or "AVI" or "MOV" or "WEBM")
+        {
+            AvailableOutputFormats.Add(format);
+        }
+    }
+}
+else if (isAudio)
+{
+    foreach (OutputFormat format in OutputFormat.DefaultFormats)
+    {
+        if (format.Name is "MP3" or "WAV" or "FLAC" or "AAC" or "OGG")
+        {
+            AvailableOutputFormats.Add(format);
+        }
+    }
+}
+else if (isImage)
+{
+    foreach (OutputFormat format in OutputFormat.DefaultFormats)
+    {
+        if (format.Name is "JPG" or "PNG" or "WEBP" or "BMP" or "TIFF")
+        {
+            AvailableOutputFormats.Add(format);
+        }
+    }
+}
+
+SelectedOutputFormat = AvailableOutputFormats.FirstOrDefault();
 
         Status = "Media Loaded";
     }

@@ -15,6 +15,7 @@ public sealed class ConversionService : IConversionService
     {
         string ffmpegPath = FFmpegLocator.GetFFmpegPath();
         string arguments = FFmpegCommandBuilder.Build(request);
+        
        
 
         ProcessStartInfo startInfo = new()
@@ -36,20 +37,41 @@ public sealed class ConversionService : IConversionService
         StringBuilder stdout = new();
         StringBuilder stderr = new();
 
+        string logFile = Path.Combine(AppContext.BaseDirectory, "ffmpeg-progress.log");
+
+        FFmpegProgressParser parser = new(
+            request.Duration,
+            progress);
+
         process.OutputDataReceived += (_, e) =>
         {
-            if (e.Data != null)
-                stdout.AppendLine(e.Data);
+            if (e.Data is null)
+                return;
+
+            stdout.AppendLine(e.Data);
+
+            File.AppendAllText(logFile, "OUT: " + e.Data + Environment.NewLine);
+
+            Debug.WriteLine($"STDOUT: {e.Data}");
+
+            parser.ProcessLine(e.Data);
         };
 
         process.ErrorDataReceived += (_, e) =>
         {
-            if (e.Data != null)
-                stderr.AppendLine(e.Data);
+            if (e.Data is null)
+                return;
+
+            stderr.AppendLine(e.Data);
+
+            File.AppendAllText(logFile, "ERR: " + e.Data + Environment.NewLine);
+
+            Debug.WriteLine($"STDERR: {e.Data}");
         };
 
         process.Start();
 
+        
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
@@ -67,6 +89,7 @@ public sealed class ConversionService : IConversionService
         });;
 
         await process.WaitForExitAsync(cancellationToken);
+        process.WaitForExit();
         
 
         bool success =
