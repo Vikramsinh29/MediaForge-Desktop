@@ -57,13 +57,14 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>  
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>         <!-- New row -->
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -136,6 +137,16 @@
                         <TextBlock Grid.Row="10"
                                    Grid.Column="1"
                                    Text="{Binding Status}"/>
+                                   
+                        <TextBlock Grid.Row="11"
+                                   Text="Output"/>
+
+                        <ComboBox Grid.Row="11"
+                                  Grid.Column="1"
+                                  Width="150"
+                                  ItemsSource="{Binding AvailableOutputFormats}"
+                                  SelectedItem="{Binding SelectedOutputFormat}"
+                                  DisplayMemberPath="Name"/>
 
                     </Grid>
 

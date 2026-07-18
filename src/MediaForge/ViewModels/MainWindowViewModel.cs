@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace MediaForge.ViewModels;
 
@@ -68,6 +70,13 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool isConverting;
 
+    [ObservableProperty]
+    private ObservableCollection<OutputFormat> availableOutputFormats = [];
+
+    [ObservableProperty]
+    private OutputFormat? selectedOutputFormat;
+    
+
     [RelayCommand]
     private async Task Open()
     {
@@ -105,12 +114,18 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            const string extension = ".mp3";
+            
 
-            string? outputPath = _fileDialogService.PickSaveFile(
-                Path.GetFileNameWithoutExtension(_currentMediaInfo.FileName),
-                ".mp3",
-                "MP3 Files|*.mp3");
+            if (SelectedOutputFormat is null)
+{
+    Status = "Please select an output format.";
+    return;
+}
+
+string? outputPath = _fileDialogService.PickSaveFile(
+    Path.GetFileNameWithoutExtension(_currentMediaInfo.FileName),
+    SelectedOutputFormat.Extension,
+    SelectedOutputFormat.Filter);
 
             if (string.IsNullOrWhiteSpace(outputPath))
             {
@@ -125,7 +140,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 InputPath = _currentMediaInfo.FullPath,
                 OutputPath = outputPath,
-                OutputFormat = "mp3",
+                OutputFormat = SelectedOutputFormat.Extension.TrimStart('.'),
                 OverwriteExisting = true
             };
 
@@ -163,6 +178,16 @@ public partial class MainWindowViewModel : ObservableObject
         Bitrate = info.Bitrate.ToString();
 
         await LoadPreviewAsync(info.FullPath);
+
+        AvailableOutputFormats.Clear();
+
+        AvailableOutputFormats.Add(
+            OutputFormat.DefaultFormats.First(f => f.Name == "MP4"));
+
+        AvailableOutputFormats.Add(
+            OutputFormat.DefaultFormats.First(f => f.Name == "MP3"));
+
+        SelectedOutputFormat = AvailableOutputFormats.First();
 
         Status = "Media Loaded";
     }
