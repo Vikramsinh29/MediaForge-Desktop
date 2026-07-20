@@ -1,7 +1,7 @@
 namespace MediaForge.Services.Batch;
 
 /// <summary>
-/// Represents the outcome of a batch conversion operation.
+/// Represents the outcome of a batch conversion.
 /// </summary>
 public sealed class BatchExecutionResult
 {
@@ -14,6 +14,9 @@ public sealed class BatchExecutionResult
     public int SkippedJobs { get; init; }
 
     public TimeSpan Elapsed { get; init; }
+
+    public IReadOnlyList<string> FailedFiles { get; init; }
+        = Array.Empty<string>();
 
     public bool Success =>
         FailedJobs == 0 &&
