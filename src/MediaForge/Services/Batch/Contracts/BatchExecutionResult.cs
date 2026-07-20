@@ -1,6 +1,6 @@
 using System;
 
-namespace MediaForge.Services.Batch;
+namespace MediaForge.Services.Batch.Contracts;
 
 /// <summary>
 /// Represents the outcome of a batch conversion.
@@ -21,4 +21,9 @@ public sealed class BatchExecutionResult
         FailedJobs == 0 &&
         SuccessfulJobs == TotalJobs &&
         TotalJobs > 0;
+
+    public double SuccessRate =>
+        TotalJobs == 0
+            ? 0
+            : (double)SuccessfulJobs / TotalJobs * 100;
 }
