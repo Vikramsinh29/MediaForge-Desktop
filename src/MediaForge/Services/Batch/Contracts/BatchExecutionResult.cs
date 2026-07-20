@@ -1,3 +1,5 @@
+using System;
+
 namespace MediaForge.Services.Batch;
 
 /// <summary>
@@ -14,9 +16,6 @@ public sealed class BatchExecutionResult
     public int SkippedJobs { get; init; }
 
     public TimeSpan Elapsed { get; init; }
-
-    public IReadOnlyList<string> FailedFiles { get; init; }
-        = Array.Empty<string>();
 
     public bool Success =>
         FailedJobs == 0 &&
