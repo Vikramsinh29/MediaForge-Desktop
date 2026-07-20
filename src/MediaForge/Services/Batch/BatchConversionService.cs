@@ -4,6 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaForge.Services.Batch.Contracts;
 using MediaForge.Services.Batch.Models;
+using MediaForge.Core.Interfaces;
+using MediaForge.Core.Models;
+using MediaForge.ViewModels;
+using MediaForge.Services.Batch.Utilities;
 
 namespace MediaForge.Services.Batch;
 
@@ -12,6 +16,16 @@ namespace MediaForge.Services.Batch;
 /// </summary>
 public sealed class BatchConversionService : IBatchConversionService
 {
+    private readonly IConversionService _conversionService;
+    private readonly OutputPathBuilder _outputPathBuilder;
+
+    public BatchConversionService(
+        IConversionService conversionService,
+        OutputPathBuilder outputPathBuilder)
+    {
+        _conversionService = conversionService;
+        _outputPathBuilder = outputPathBuilder;
+    }
     public async Task<BatchExecutionResult> ConvertAsync(
         BatchConversionOptions options,
         IProgress<BatchConversionProgress>? progress = null,
@@ -43,19 +57,61 @@ public sealed class BatchConversionService : IBatchConversionService
 
             var job = options.Jobs[i];
 
-            progress?.Report(new BatchConversionProgress
+            job.Status = JobStatus.Converting;
+
+            string outputPath = _outputPathBuilder.Build(
+                job.Media.FullPath,
+                options.OutputFolder,
+                job.OutputFormat!.Extension);
+
+            ConversionRequest request = new()
             {
-                CurrentJob = i + 1,
-                TotalJobs = options.Jobs.Count,
-                CurrentFile = job.Media.FileName,
-                Percentage = ((double)(i + 1) / options.Jobs.Count) * 100.0
+                InputPath = job.Media.FullPath,
+                OutputPath = outputPath,
+                OutputFormat = job.OutputFormat.Extension.TrimStart('.'),
+                OverwriteExisting = true,
+                Duration = TimeSpan.FromSeconds(job.Media.Duration)
+            };
+
+            IProgress<double> fileProgress = new Progress<double>(value =>
+            {
+                job.Progress = value;
+
+                progress?.Report(new BatchConversionProgress
+                {
+                    CurrentJob = i + 1,
+                    TotalJobs = options.Jobs.Count,
+                    CurrentFile = job.Media.FileName,
+                    Percentage = value
+                });
             });
 
-            // TODO:
-            // Replace this placeholder with the existing conversion pipeline.
-            await Task.Yield();
+            ConversionResult result = await _conversionService.ConvertAsync(
+                request,
+                fileProgress,
+                cancellationToken);
 
-            successful++;
+            if (result.Success)
+            {
+                successful++;
+
+                job.Progress = 100;
+                job.Status = JobStatus.Completed;
+                job.OutputPath = outputPath;
+            }
+            else
+            {
+                failed++;
+
+                job.Status = JobStatus.Failed;
+                job.ErrorMessage = result.ErrorMessage;
+
+                if (!options.ContinueOnError)
+                {
+                    skipped = options.Jobs.Count - (i + 1);
+                    break;
+                }
+            }
         }
 
         stopwatch.Stop();

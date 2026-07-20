@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace MediaForge.Services.Batch;
+namespace MediaForge.Services.Batch.Utilities;
 
 /// <summary>
 /// Creates output file paths for batch conversions.

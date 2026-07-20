@@ -1,6 +1,6 @@
 using System;
 
-namespace MediaForge.Services.Batch.Contracts;
+namespace MediaForge.Services.Batch.Models;
 
 /// <summary>
 /// Represents the outcome of a batch conversion.
