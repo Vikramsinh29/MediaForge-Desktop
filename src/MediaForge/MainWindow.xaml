@@ -23,7 +23,7 @@
                 IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}" />
 
         <Button Content="Convert"
-                Command="{Binding ConvertCommand}"
+                Command="{Binding ConvertAllCommand}"
                 IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}" />
 
         <Button Content="Convert All"/>

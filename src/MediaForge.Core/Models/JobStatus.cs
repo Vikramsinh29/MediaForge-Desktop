@@ -1,8 +1,9 @@
+namespace MediaForge.Core.Models;
+
 public enum JobStatus
 {
     Pending,
-    Processing,
+    Converting,
     Completed,
-    Failed,
-    Cancelled
+    Failed
 }

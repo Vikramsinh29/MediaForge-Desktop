@@ -12,4 +12,6 @@ public interface IFileDialogService
         string suggestedFileName,
         string defaultExtension,
         string filter);
+
+    string? PickFolder();
 }

@@ -150,13 +150,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            if (_currentMediaInfo is null)
+            if (SelectedQueueItem is null)
             {
-                Status = "Please open a media file first.";
+                Status = "Please select a file.";
                 return;
             }
-
-            
+                     
 
             if (SelectedOutputFormat is null)
 {
@@ -165,7 +164,7 @@ public partial class MainWindowViewModel : ObservableObject
 }
 
 string? outputPath = _fileDialogService.PickSaveFile(
-    Path.GetFileNameWithoutExtension(_currentMediaInfo.FileName),
+    Path.GetFileNameWithoutExtension(SelectedQueueItem.Media.FileName),
     SelectedOutputFormat.Extension,
     SelectedOutputFormat.Filter);
 
@@ -183,11 +182,11 @@ string? outputPath = _fileDialogService.PickSaveFile(
 
             ConversionRequest request = new()
             {
-                InputPath = _currentMediaInfo.FullPath,
+                InputPath = SelectedQueueItem.Media.FullPath,
                 OutputPath = outputPath,
                 OutputFormat = SelectedOutputFormat.Extension.TrimStart('.'),
                 OverwriteExisting = true,
-                Duration = TimeSpan.FromSeconds(_currentMediaInfo.Duration)
+                Duration = TimeSpan.FromSeconds(SelectedQueueItem.Media.Duration)
             };
 
             IProgress<double> conversionProgress = new Progress<double>(value =>
