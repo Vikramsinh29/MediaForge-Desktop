@@ -162,9 +162,9 @@ string? outputPath = _fileDialogService.PickSaveFile(
             });
 
             ConversionResult result =
-                await _conversionService.ConvertAsync(
-                    request,
-                    conversionProgress);
+            await ConvertJobAsync(
+                request,
+                conversionProgress);
 
             if (result.Success)
             {
