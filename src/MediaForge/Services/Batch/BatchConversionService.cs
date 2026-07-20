@@ -2,11 +2,10 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaForge.Services.Batch.Contracts;
-using MediaForge.Services.Batch.Models;
 using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
-using MediaForge.ViewModels;
+using MediaForge.Services.Batch.Contracts;
+using MediaForge.Services.Batch.Models;
 using MediaForge.Services.Batch.Utilities;
 
 namespace MediaForge.Services.Batch;
@@ -17,6 +16,7 @@ namespace MediaForge.Services.Batch;
 public sealed class BatchConversionService : IBatchConversionService
 {
     private readonly IConversionService _conversionService;
+    
     private readonly OutputPathBuilder _outputPathBuilder;
 
     public BatchConversionService(
@@ -26,6 +26,7 @@ public sealed class BatchConversionService : IBatchConversionService
         _conversionService = conversionService;
         _outputPathBuilder = outputPathBuilder;
     }
+
     public async Task<BatchExecutionResult> ConvertAsync(
         BatchConversionOptions options,
         IProgress<BatchConversionProgress>? progress = null,
@@ -45,7 +46,7 @@ public sealed class BatchConversionService : IBatchConversionService
             };
         }
 
-        var stopwatch = Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
 
         int successful = 0;
         int failed = 0;
@@ -57,64 +58,97 @@ public sealed class BatchConversionService : IBatchConversionService
 
             var job = options.Jobs[i];
 
-            job.Status = JobStatus.Converting;
-
-            string outputPath = _outputPathBuilder.Build(
-                job.Media.FullPath,
-                options.OutputFolder,
-                job.OutputFormat!.Extension);
-
-            ConversionRequest request = new()
+            progress?.Report(new BatchConversionProgress
             {
-                InputPath = job.Media.FullPath,
-                OutputPath = outputPath,
-                OutputFormat = job.OutputFormat.Extension.TrimStart('.'),
-                OverwriteExisting = true,
-                Duration = TimeSpan.FromSeconds(job.Media.Duration)
-            };
-
-            IProgress<double> fileProgress = new Progress<double>(value =>
-            {
-                job.Progress = value;
-
-                progress?.Report(new BatchConversionProgress
-                {
-                    CurrentJob = i + 1,
-                    TotalJobs = options.Jobs.Count,
-                    CurrentFile = job.Media.FileName,
-                    Percentage = value
-                });
+                CurrentJob = i + 1,
+                TotalJobs = options.Jobs.Count,
+                CurrentFile = job.Media.FileName,
+                Percentage = ((double)i / options.Jobs.Count) * 100
             });
 
-            ConversionResult result = await _conversionService.ConvertAsync(
-                request,
-                fileProgress,
-                cancellationToken);
-
-            if (result.Success)
+            try
             {
-                successful++;
+                job.Status = JobStatus.Converting;
 
-                job.Progress = 100;
-                job.Status = JobStatus.Completed;
-                job.OutputPath = outputPath;
+                string outputPath =
+                    _outputPathBuilder.Build(
+                        job.Media.FullPath,
+                        options.OutputFolder,
+                        job.OutputFormat!.Extension);
+
+                ConversionRequest request = new()
+                {
+                    InputPath = job.Media.FullPath,
+                    OutputPath = outputPath,
+                    OutputFormat = job.OutputFormat.Extension.TrimStart('.'),
+                    OverwriteExisting = true,
+                    Duration = TimeSpan.FromSeconds(job.Media.Duration)
+                };
+
+                Progress<double> fileProgress = new(value =>
+                {
+                    job.Progress = value;
+
+                    progress?.Report(new BatchConversionProgress
+                    {
+                        CurrentJob = i + 1,
+                        TotalJobs = options.Jobs.Count,
+                        CurrentFile = job.Media.FileName,
+                        Percentage =
+                            ((i + (value / 100.0)) / options.Jobs.Count) * 100.0
+                    });
+                });
+
+                ConversionResult result =
+                    await _conversionService.ConvertAsync(
+                        request,
+                        fileProgress,
+                        cancellationToken);
+
+                if (result.Success)
+                {
+                    job.Status = JobStatus.Completed;
+                    job.OutputPath = result.OutputFile;
+                    job.Progress = 100;
+
+                    successful++;
+                }
+                else
+                {
+                    job.Status = JobStatus.Failed;
+                    job.ErrorMessage = result.ErrorMessage;
+
+                    failed++;
+
+                    if (!options.ContinueOnError)
+                        break;
+                }
             }
-            else
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                job.Status = JobStatus.Failed;
+                job.ErrorMessage = ex.Message;
+
                 failed++;
 
-                job.Status = JobStatus.Failed;
-                job.ErrorMessage = result.ErrorMessage;
-
                 if (!options.ContinueOnError)
-                {
-                    skipped = options.Jobs.Count - (i + 1);
                     break;
-                }
             }
         }
 
         stopwatch.Stop();
+
+        progress?.Report(new BatchConversionProgress
+        {
+            CurrentJob = options.Jobs.Count,
+            TotalJobs = options.Jobs.Count,
+            CurrentFile = string.Empty,
+            Percentage = 100
+        });
 
         return new BatchExecutionResult
         {

@@ -1,8 +1,12 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
 using MediaForge.Infrastructure.FFmpeg;
 using MediaForge.Services;
+using MediaForge.Services.Batch;
+using MediaForge.Services.Batch.Contracts;
+using MediaForge.Services.Batch.Utilities;
 using MediaForge.ViewModels;
 
 namespace MediaForge;
@@ -24,14 +28,23 @@ public partial class MainWindow : Window
 
         IConversionService conversionService = new ConversionService();
 
+        OutputPathBuilder outputPathBuilder = new();
+
+        IBatchConversionService batchConversionService =
+            new BatchConversionService(
+                conversionService,
+                outputPathBuilder);
+
         _viewModel = new MainWindowViewModel(
             fileDialogService,
             _ffprobeService,
             thumbnailService,
-            conversionService);
+            conversionService,
+            batchConversionService);
 
         DataContext = _viewModel;
 
+        
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
     }
 

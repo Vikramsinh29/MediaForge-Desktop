@@ -79,6 +79,13 @@ public sealed class FileDialogService : IFileDialogService
 
     public string? PickFolder()
     {
-        throw new NotImplementedException();
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Select Output Folder"
+        };
+
+        return dialog.ShowDialog() == true
+            ? dialog.FolderName
+            : null;
     }
 }

@@ -6,7 +6,12 @@ using CommunityToolkit.Mvvm.Input;
 using MediaForge.Core.Interfaces;
 using MediaForge.Core.Models;
 using System.Collections.ObjectModel;
+using MediaForge.Services.Batch.Contracts;
+using MediaForge.Services.Batch;
+using MediaForge.Services.Batch.Models;
+using System.Windows;
 using System.Linq;
+
 
 namespace MediaForge.ViewModels;
 
@@ -16,19 +21,21 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IFFprobeService _ffprobeService;
     private readonly IThumbnailService _thumbnailService;
     private readonly IConversionService _conversionService;
-
+    private readonly IBatchConversionService _batchConversionService;
     private MediaInfo? _currentMediaInfo;
 
     public MainWindowViewModel(
         IFileDialogService fileDialogService,
         IFFprobeService ffprobeService,
         IThumbnailService thumbnailService,
-        IConversionService conversionService)
+        IConversionService conversionService,
+        IBatchConversionService batchConversionService)
     {
         _fileDialogService = fileDialogService;
         _ffprobeService = ffprobeService;
         _thumbnailService = thumbnailService;
         _conversionService = conversionService;
+        _batchConversionService = batchConversionService;
     }
 
     [ObservableProperty]
@@ -102,83 +109,67 @@ public partial class MainWindowViewModel : ObservableObject
         _ = LoadAsync(value.Media);
     }
     
-
-
     [RelayCommand]
     private async Task Convert()
     {
         if (IsConverting)
             return;
 
+        if (ConversionQueue.Count == 0)
+        {
+            Status = "No files in queue.";
+            return;
+        }
+
+        string? outputFolder = _fileDialogService.PickFolder();
+
+        if (string.IsNullOrWhiteSpace(outputFolder))
+        {
+            Status = "Conversion cancelled.";
+            return;
+        }
+
         try
         {
-            if (SelectedQueueItem is null)
-            {
-                Status = "Please select a file.";
-                return;
-            }
-                     
-
-            if (SelectedOutputFormat is null)
-{
-    Status = "Please select an output format.";
-    return;
-}
-
-string? outputPath = _fileDialogService.PickSaveFile(
-    Path.GetFileNameWithoutExtension(SelectedQueueItem.Media.FileName),
-    SelectedOutputFormat.Extension,
-    SelectedOutputFormat.Filter);
-
-            if (string.IsNullOrWhiteSpace(outputPath))
-            {
-                Status = "Conversion cancelled.";
-                return;
-            }
-
             IsConverting = true;
-            Status = "Converting...";
-
             Progress = 0;
             ProgressText = "0%";
 
-            ConversionRequest request = new()
+            BatchConversionOptions options = new()
             {
-                InputPath = SelectedQueueItem.Media.FullPath,
-                OutputPath = outputPath,
-                OutputFormat = SelectedOutputFormat.Extension.TrimStart('.'),
-                OverwriteExisting = true,
-                Duration = TimeSpan.FromSeconds(SelectedQueueItem.Media.Duration)
+                Jobs = ConversionQueue.ToList(),
+                OutputFolder = outputFolder,
+                ContinueOnError = true
             };
 
-            IProgress<double> conversionProgress = new Progress<double>(value =>
-            {
-                Progress = value;
-                ProgressText = $"{value:F0}%";
+            Progress<BatchConversionProgress> progress =
+                new(batchProgress =>
+                {
+                    Progress = batchProgress.Percentage;
+                    ProgressText = $"{batchProgress.Percentage:F0}%";
 
-                File.AppendAllText(
-                    Path.Combine(AppContext.BaseDirectory, "ui-progress.log"),
-                    $"{DateTime.Now:HH:mm:ss.fff}  {value:F2}%{Environment.NewLine}");
-            });
+                    Status =
+                        $"Converting {batchProgress.CurrentJob} of {batchProgress.TotalJobs}: {batchProgress.CurrentFile}";
+                });
 
-            ConversionResult result =
-            await ConvertJobAsync(
-                request,
-                conversionProgress);
+            BatchExecutionResult result =
+                await _batchConversionService.ConvertAsync(
+                    options,
+                    progress);
 
-            if (result.Success)
-            {
-                Progress = 100;
-                ProgressText = "100%";
-                Status = "Conversion completed.";
-            }
-            else
-            {
-                Status = result.ErrorMessage ?? "Conversion failed.";
-            }
+            Status =
+                $"Completed. Success: {result.SuccessfulJobs}, Failed: {result.FailedJobs}, Skipped: {result.SkippedJobs}";
+
+            Progress = 100;
+            ProgressText = "100%";
+            
         }
         catch (Exception ex)
         {
+            MessageBox.Show(
+                ex.ToString(),
+                "Conversion Error");
+
             Status = ex.Message;
         }
         finally
@@ -186,7 +177,6 @@ string? outputPath = _fileDialogService.PickSaveFile(
             IsConverting = false;
         }
     }
-       
     public async Task LoadAsync(MediaInfo info)
     {
         _currentMediaInfo = info;
