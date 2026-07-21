@@ -21,4 +21,6 @@ public sealed class MediaInfo
     public double FPS { get; set; }
 
     public long Bitrate { get; set; }
+
+    public TrimOptions Trim { get; } = new();
 }

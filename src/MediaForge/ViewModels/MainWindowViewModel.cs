@@ -240,7 +240,10 @@ public partial class MainWindowViewModel : ObservableObject
                 ConversionQueue.Remove(job);
             }
 
+            SelectedQueueItem = ConversionQueue.FirstOrDefault();
+
             Status = $"{completedJobs.Count} completed item(s) removed.";
+
         }
 
         [RelayCommand]
@@ -255,11 +258,75 @@ public partial class MainWindowViewModel : ObservableObject
                 job.Status = JobStatus.Pending;
                 job.Progress = 0;
                 job.ErrorMessage = null;
+                job.OutputPath = null;
             }
 
             Status = $"{failedJobs.Count} failed item(s) reset for retry.";
         }
 
+        [RelayCommand]
+        private void MoveUp()
+        {
+            if (SelectedQueueItem is null)
+                return;
+
+            int index = ConversionQueue.IndexOf(SelectedQueueItem);
+
+            if (index <= 0)
+                return;
+
+            ConversionQueue.Move(index, index - 1);
+
+            Status = "Queue item moved up.";
+        }
+
+        [RelayCommand]
+        private void MoveDown()
+        {
+            if (SelectedQueueItem is null)
+                return;
+
+            int index = ConversionQueue.IndexOf(SelectedQueueItem);
+
+            if (index < 0 || index >= ConversionQueue.Count - 1)
+                return;
+
+            ConversionQueue.Move(index, index + 1);
+
+            Status = "Queue item moved down.";
+        }
+
+        [RelayCommand]
+        private void MoveToTop()
+        {
+            if (SelectedQueueItem is null)
+                return;
+
+            int index = ConversionQueue.IndexOf(SelectedQueueItem);
+
+            if (index <= 0)
+                return;
+
+            ConversionQueue.Move(index, 0);
+
+            Status = "Queue item moved to top.";
+        }
+
+        [RelayCommand]
+        private void MoveToBottom()
+        {
+            if (SelectedQueueItem is null)
+                return;
+
+            int index = ConversionQueue.IndexOf(SelectedQueueItem);
+
+            if (index < 0 || index == ConversionQueue.Count - 1)
+                return;
+
+            ConversionQueue.Move(index, ConversionQueue.Count - 1);
+
+            Status = "Queue item moved to bottom.";
+        }
         public async Task LoadAsync(MediaInfo info)
 
     {

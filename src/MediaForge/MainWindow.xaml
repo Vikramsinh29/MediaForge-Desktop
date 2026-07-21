@@ -55,8 +55,30 @@
         <Button Content="Remove"
                 Command="{Binding RemoveSelectedCommand}" />
 
+        <Button Content="⤒"
+                Width="40"
+                Command="{Binding MoveToTopCommand}" />
+
+        <Button Content="▲"
+                Width="40"
+                Command="{Binding MoveUpCommand}" />
+
+        <Button Content="▼"
+                Width="40"
+                Command="{Binding MoveDownCommand}" />
+
+        <Button Content="⤓"
+                Width="40"
+                Command="{Binding MoveToBottomCommand}" />
+
         <Button Content="Remove Completed"
                 Command="{Binding RemoveCompletedCommand}" />
+
+        <Button Content="Retry Failed"
+                Command="{Binding RetryFailedCommand}" />
+
+        <Button Content="Clear Queue"
+                Command="{Binding ClearQueueCommand}" />
 
         <Button Content="Retry Failed"
                 Command="{Binding RetryFailedCommand}" />
