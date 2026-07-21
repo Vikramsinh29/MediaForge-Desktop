@@ -97,6 +97,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private OutputFormat? selectedOutputFormat;
+
     partial void OnSelectedOutputFormatChanged(OutputFormat? value)
     {
         if (SelectedQueueItem is null || value is null)
@@ -104,6 +105,15 @@ public partial class MainWindowViewModel : ObservableObject
 
         SelectedQueueItem.OutputFormat = value;
     }
+
+    public IReadOnlyList<VideoCompressionPreset> CompressionPresets { get; } =
+    [
+        VideoCompressionPreset.None,
+        VideoCompressionPreset.Fast,
+        VideoCompressionPreset.Balanced,
+        VideoCompressionPreset.HighQuality,
+        VideoCompressionPreset.MaximumCompression
+    ];
 
     [ObservableProperty]
     private ObservableCollection<ConversionJobViewModel> conversionQueue = [];
