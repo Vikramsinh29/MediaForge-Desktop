@@ -55,6 +55,12 @@
         <Button Content="Remove"
                 Command="{Binding RemoveSelectedCommand}" />
 
+        <Button Content="Remove Completed"
+                Command="{Binding RemoveCompletedCommand}" />
+
+        <Button Content="Retry Failed"
+                Command="{Binding RetryFailedCommand}" />
+
         <Button Content="Clear Queue"
                 Command="{Binding ClearQueueCommand}" />
 

@@ -228,6 +228,38 @@ public partial class MainWindowViewModel : ObservableObject
             Status = "Resuming...";
         }
 
+        [RelayCommand]
+        private void RemoveCompleted()
+        {
+            var completedJobs = ConversionQueue
+                .Where(job => job.Status == JobStatus.Completed)
+                .ToList();
+
+            foreach (var job in completedJobs)
+            {
+                ConversionQueue.Remove(job);
+            }
+
+            Status = $"{completedJobs.Count} completed item(s) removed.";
+        }
+
+        [RelayCommand]
+        private void RetryFailed()
+        {
+            var failedJobs = ConversionQueue
+                .Where(job => job.Status == JobStatus.Failed)
+                .ToList();
+
+            foreach (var job in failedJobs)
+            {
+                job.Status = JobStatus.Pending;
+                job.Progress = 0;
+                job.ErrorMessage = null;
+            }
+
+            Status = $"{failedJobs.Count} failed item(s) reset for retry.";
+        }
+
         public async Task LoadAsync(MediaInfo info)
 
     {
