@@ -5,5 +5,6 @@ public enum JobStatus
     Pending,
     Converting,
     Completed,
-    Failed
+    Failed,
+    Cancelled
 }

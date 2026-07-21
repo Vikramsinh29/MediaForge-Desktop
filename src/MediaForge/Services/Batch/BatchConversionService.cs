@@ -126,7 +126,13 @@ public sealed class BatchConversionService : IBatchConversionService
             }
             catch (OperationCanceledException)
             {
-                throw;
+                job.Status = JobStatus.Cancelled;
+                job.Progress = 0;
+                job.ErrorMessage = "Cancelled by user.";
+
+                skipped++;
+
+                break;
             }
             catch (Exception ex)
             {

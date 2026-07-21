@@ -22,21 +22,24 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IThumbnailService _thumbnailService;
     private readonly IConversionService _conversionService;
     private readonly IBatchConversionService _batchConversionService;
+
+    private CancellationTokenSource? _batchCancellation;
+
     private MediaInfo? _currentMediaInfo;
 
     public MainWindowViewModel(
-        IFileDialogService fileDialogService,
-        IFFprobeService ffprobeService,
-        IThumbnailService thumbnailService,
-        IConversionService conversionService,
-        IBatchConversionService batchConversionService)
-    {
-        _fileDialogService = fileDialogService;
-        _ffprobeService = ffprobeService;
-        _thumbnailService = thumbnailService;
-        _conversionService = conversionService;
-        _batchConversionService = batchConversionService;
-    }
+    IFileDialogService fileDialogService,
+    IFFprobeService ffprobeService,
+    IThumbnailService thumbnailService,
+    IConversionService conversionService,
+    IBatchConversionService batchConversionService)
+{
+    _fileDialogService = fileDialogService;
+    _ffprobeService = ffprobeService;
+    _thumbnailService = thumbnailService;
+    _conversionService = conversionService;
+    _batchConversionService = batchConversionService;
+}
 
     [ObservableProperty]
     private string status = "Ready";
@@ -152,10 +155,13 @@ public partial class MainWindowViewModel : ObservableObject
                         $"Converting {batchProgress.CurrentJob} of {batchProgress.TotalJobs}: {batchProgress.CurrentFile}";
                 });
 
+            _batchCancellation = new CancellationTokenSource();
+
             BatchExecutionResult result =
                 await _batchConversionService.ConvertAsync(
                     options,
-                    progress);
+                    progress,
+                    _batchCancellation.Token);
 
             Status =
                 $"Completed. Success: {result.SuccessfulJobs}, Failed: {result.FailedJobs}, Skipped: {result.SkippedJobs}";
@@ -174,10 +180,26 @@ public partial class MainWindowViewModel : ObservableObject
         }
         finally
         {
+            _batchCancellation?.Dispose();
+            _batchCancellation = null;
+
             IsConverting = false;
         }
     }
-    public async Task LoadAsync(MediaInfo info)
+
+        [RelayCommand]
+        private void CancelConversion()
+        {
+            if (!IsConverting)
+                return;
+
+            _batchCancellation?.Cancel();
+
+            Status = "Cancelling...";
+        }
+
+        public async Task LoadAsync(MediaInfo info)
+
     {
         _currentMediaInfo = info;
 
@@ -193,6 +215,7 @@ public partial class MainWindowViewModel : ObservableObject
         Fps = info.FPS.ToString("F2");
         Bitrate = info.Bitrate.ToString();
 
+        
         await LoadPreviewAsync(info.FullPath);
 
         AvailableOutputFormats.Clear();
