@@ -22,4 +22,13 @@ public partial class ConversionJobViewModel : ObservableObject
 
     [ObservableProperty]
     private string? errorMessage;
+
+    [ObservableProperty]
+    private TimeSpan? trimStart;
+
+    [ObservableProperty]
+    private TimeSpan? trimEnd;
+
+    public bool HasTrim =>
+        TrimStart.HasValue || TrimEnd.HasValue;
 }

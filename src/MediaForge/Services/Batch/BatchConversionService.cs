@@ -63,7 +63,7 @@ public sealed class BatchConversionService : IBatchConversionService
             _pauseController.WaitIfPaused(cancellationToken);
 
             var job = options.Jobs[i];
-            
+
             progress?.Report(new BatchConversionProgress
             {
                 CurrentJob = i + 1,
@@ -88,7 +88,10 @@ public sealed class BatchConversionService : IBatchConversionService
                     OutputPath = outputPath,
                     OutputFormat = job.OutputFormat.Extension.TrimStart('.'),
                     OverwriteExisting = true,
-                    Duration = TimeSpan.FromSeconds(job.Media.Duration)
+                    Duration = TimeSpan.FromSeconds(job.Media.Duration),
+
+                    TrimStart = job.TrimStart,
+                    TrimEnd = job.TrimEnd
                 };
 
                 Progress<double> fileProgress = new(value =>

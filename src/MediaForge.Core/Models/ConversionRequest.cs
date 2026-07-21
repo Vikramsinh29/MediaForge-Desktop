@@ -11,4 +11,8 @@ public sealed class ConversionRequest
     public bool OverwriteExisting { get; set; }
 
     public TimeSpan Duration { get; set; }
+
+    public TimeSpan? TrimStart { get; set; }
+
+    public TimeSpan? TrimEnd { get; set; }
 }
