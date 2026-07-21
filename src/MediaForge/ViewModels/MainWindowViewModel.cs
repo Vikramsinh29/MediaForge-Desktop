@@ -22,24 +22,27 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IThumbnailService _thumbnailService;
     private readonly IConversionService _conversionService;
     private readonly IBatchConversionService _batchConversionService;
+    private readonly BatchPauseController _pauseController;
 
     private CancellationTokenSource? _batchCancellation;
 
     private MediaInfo? _currentMediaInfo;
 
     public MainWindowViewModel(
-    IFileDialogService fileDialogService,
-    IFFprobeService ffprobeService,
-    IThumbnailService thumbnailService,
-    IConversionService conversionService,
-    IBatchConversionService batchConversionService)
-{
-    _fileDialogService = fileDialogService;
-    _ffprobeService = ffprobeService;
-    _thumbnailService = thumbnailService;
-    _conversionService = conversionService;
-    _batchConversionService = batchConversionService;
-}
+        IFileDialogService fileDialogService,
+        IFFprobeService ffprobeService,
+        IThumbnailService thumbnailService,
+        IConversionService conversionService,
+        IBatchConversionService batchConversionService,
+        BatchPauseController pauseController)
+    {
+        _fileDialogService = fileDialogService;
+        _ffprobeService = ffprobeService;
+        _thumbnailService = thumbnailService;
+        _conversionService = conversionService;
+        _batchConversionService = batchConversionService;
+        _pauseController = pauseController;
+    }
 
     [ObservableProperty]
     private string status = "Ready";
@@ -79,6 +82,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isConverting;
+    
+    [ObservableProperty]
+    private bool isPaused;
+
     [ObservableProperty]
     private double progress;
 
@@ -196,6 +203,29 @@ public partial class MainWindowViewModel : ObservableObject
             _batchCancellation?.Cancel();
 
             Status = "Cancelling...";
+        }
+        [RelayCommand]
+        private void PauseConversion()
+        {
+            if (!IsConverting || IsPaused)
+                return;
+
+            _pauseController.Pause();
+
+            IsPaused = true;
+            Status = "Paused";
+        }
+
+        [RelayCommand]
+        private void ResumeConversion()
+        {
+            if (!IsPaused)
+                return;
+
+            _pauseController.Resume();
+
+            IsPaused = false;
+            Status = "Resuming...";
         }
 
         public async Task LoadAsync(MediaInfo info)

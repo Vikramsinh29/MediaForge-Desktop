@@ -19,12 +19,16 @@ public sealed class BatchConversionService : IBatchConversionService
     
     private readonly OutputPathBuilder _outputPathBuilder;
 
+    private readonly BatchPauseController _pauseController;
+
     public BatchConversionService(
         IConversionService conversionService,
-        OutputPathBuilder outputPathBuilder)
+        OutputPathBuilder outputPathBuilder,
+        BatchPauseController pauseController)
     {
         _conversionService = conversionService;
         _outputPathBuilder = outputPathBuilder;
+        _pauseController = pauseController;
     }
 
     public async Task<BatchExecutionResult> ConvertAsync(
@@ -56,8 +60,10 @@ public sealed class BatchConversionService : IBatchConversionService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var job = options.Jobs[i];
+            _pauseController.WaitIfPaused(cancellationToken);
 
+            var job = options.Jobs[i];
+            
             progress?.Report(new BatchConversionProgress
             {
                 CurrentJob = i + 1,

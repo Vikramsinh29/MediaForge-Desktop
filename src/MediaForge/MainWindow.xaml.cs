@@ -30,17 +30,21 @@ public partial class MainWindow : Window
 
         OutputPathBuilder outputPathBuilder = new();
 
+        BatchPauseController pauseController = new();
+
         IBatchConversionService batchConversionService =
             new BatchConversionService(
                 conversionService,
-                outputPathBuilder);
+                outputPathBuilder, 
+                pauseController);
 
         _viewModel = new MainWindowViewModel(
-            fileDialogService,
-            _ffprobeService,
-            thumbnailService,
-            conversionService,
-            batchConversionService);
+        fileDialogService,
+        _ffprobeService,
+        thumbnailService,
+        conversionService,
+        batchConversionService,
+        pauseController);
 
         DataContext = _viewModel;
 
