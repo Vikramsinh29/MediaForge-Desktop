@@ -91,7 +91,9 @@ public sealed class BatchConversionService : IBatchConversionService
                     Duration = TimeSpan.FromSeconds(job.Media.Duration),
 
                     TrimStart = job.TrimStart,
-                    TrimEnd = job.TrimEnd
+                    TrimEnd = job.TrimEnd,
+
+                    CompressionPreset = job.CompressionPreset
                 };
 
                 Progress<double> fileProgress = new(value =>

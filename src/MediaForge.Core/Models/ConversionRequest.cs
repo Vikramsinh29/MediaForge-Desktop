@@ -15,4 +15,6 @@ public sealed class ConversionRequest
     public TimeSpan? TrimStart { get; set; }
 
     public TimeSpan? TrimEnd { get; set; }
+    public VideoCompressionPreset CompressionPreset { get; set; }
+        = VideoCompressionPreset.None;
 }

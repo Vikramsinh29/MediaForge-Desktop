@@ -51,4 +51,8 @@ public partial class ConversionJobViewModel : ObservableObject
 
     public bool HasTrim =>
         TrimStart.HasValue || TrimEnd.HasValue;
+
+    [ObservableProperty]
+    private VideoCompressionPreset compressionPreset =
+        VideoCompressionPreset.None;
 }
